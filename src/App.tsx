@@ -18,6 +18,7 @@ interface Scores {
 function App() {
   const [videoId, setVideoId] = useState("9hhMUT2U2L4");
   const [player, setPlayer] = useState<YouTubePlayer | null>(null);
+  const [playerStatus, setPlayerStatus] = useState(PlayerStates.UNSTARTED);
 
   function clickScore(scores: Scores, score: number) {
     // reset score
@@ -61,6 +62,9 @@ function App() {
           component={YouTube}
           videoId={videoId}
           onReady={(e: { target: YouTubePlayer }) => onReady(e.target)}
+          onStateChange={(e: { target: YouTubePlayer; data: number }) =>
+            setPlayerStatus(e.data)
+          }
           sx={{ m: "auto" }}
         />
         <CardContent sx={{ m: "auto" }}>
@@ -73,25 +77,19 @@ function App() {
           <Stack direction="row" spacing={1}>
             <Button
               onClick={() => setScores(1)}
-              disabled={
-                !player || player.getPlayerState() === PlayerStates.PLAYING
-              }
+              disabled={playerStatus !== PlayerStates.PLAYING}
             >
               +1
             </Button>
             <Button
               onClick={() => setScores(-1)}
-              disabled={
-                !player || player.getPlayerState() === PlayerStates.PLAYING
-              }
+              disabled={playerStatus !== PlayerStates.PLAYING}
             >
               -1
             </Button>
             <Button
               onClick={() => setScores(0)}
-              disabled={
-                !player || player.getPlayerState() === PlayerStates.PLAYING
-              }
+              disabled={playerStatus !== PlayerStates.PLAYING}
             >
               RESET
             </Button>
