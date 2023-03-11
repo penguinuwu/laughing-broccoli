@@ -10,22 +10,24 @@ import CardContent from "@mui/material/CardContent";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
+import { Bar, BarChart, Tooltip, XAxis, YAxis } from "recharts";
 
 interface Scores {
-  [key: number]: number;
+  [key: string]: number;
 }
 
 function App() {
   const [videoId, setVideoId] = useState("9hhMUT2U2L4");
   const [player, setPlayer] = useState<YouTubePlayer | null>(null);
   const [playerStatus, setPlayerStatus] = useState(PlayerStates.UNSTARTED);
+  const [videoLength, setVideoLength] = useState(0);
 
   function clickScore(scores: Scores, score: number) {
     // reset score
     if (score === 0) return {};
 
     // undefined youtube player
-    const seconds = player?.getCurrentTime();
+    const seconds = `${player?.getCurrentTime()}`;
     if (seconds === undefined || seconds === null) return scores;
 
     // check if video is playing
@@ -44,10 +46,6 @@ function App() {
 
   const [scores, setScores] = useReducer(clickScore, {});
 
-  function onReady(youtubePlayer: YouTubePlayer) {
-    setPlayer(youtubePlayer);
-  }
-
   function onChangeVideo(videoId: string) {
     setVideoId(videoId);
     setScores(0);
@@ -61,9 +59,12 @@ function App() {
           src="iframe"
           component={YouTube}
           videoId={videoId}
-          onReady={(e: { target: YouTubePlayer }) => onReady(e.target)}
+          onReady={(e: { target: YouTubePlayer }) => setPlayer(e.target)}
           onStateChange={(e: { target: YouTubePlayer; data: number }) =>
             setPlayerStatus(e.data)
+          }
+          onPlay={(e: { target: YouTubePlayer }) =>
+            setVideoLength(e.target.getDuration())
           }
           sx={{ m: "auto" }}
         />
@@ -94,7 +95,32 @@ function App() {
               RESET
             </Button>
           </Stack>
+          <BarChart
+            width={500}
+            height={250}
+            data={Object.keys(scores).map((time) => {
+              return { time: parseFloat(time), score: scores[time] };
+            })}
+          >
+            <XAxis
+              dataKey="time"
+              scale="time"
+              type="number"
+              domain={[0, videoLength]}
+            />
+            <YAxis dataKey="score" />
+            <Tooltip />
+            <Bar type="monotone" dataKey="score" stroke="#82ca9d" />
+          </BarChart>
           <p>{JSON.stringify(scores)}</p>
+          <p>
+            {JSON.stringify(
+              Object.keys(scores).map((time) => {
+                return { time: parseFloat(time), score: scores[time] };
+              })
+            )}
+          </p>
+          <p>{videoLength}</p>
         </CardContent>
       </Card>
     </Container>
