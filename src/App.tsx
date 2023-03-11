@@ -10,11 +10,9 @@ import CardContent from "@mui/material/CardContent";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
-import { Bar, BarChart, Tooltip, XAxis, YAxis } from "recharts";
 
-interface Scores {
-	[key: string]: number;
-}
+import { Scores } from "types";
+import LookAtThisGraph from "LookAtThisGraph";
 
 function App() {
 	const [videoId, setVideoId] = useState("9hhMUT2U2L4");
@@ -27,14 +25,16 @@ function App() {
 		if (score === 0) return {};
 
 		// undefined youtube player
-		const seconds = `${player?.getCurrentTime()}`;
-		if (seconds === undefined || seconds === null) return scores;
+		if (!player) return scores;
 
 		// check if video is playing
-		if (player?.getPlayerState() !== PlayerStates.PLAYING) return scores;
+		if (player.getPlayerState() !== PlayerStates.PLAYING) return scores;
 
 		// initialize score
-		if (scores[seconds] === undefined || scores[seconds] === null) scores[seconds] = 0;
+		const seconds = `${player.getCurrentTime()}`;
+		if (scores[seconds] === undefined || scores[seconds] === null) {
+			scores[seconds] = 0;
+		}
 
 		// update score
 		scores[seconds] += score;
@@ -54,19 +54,24 @@ function App() {
 		<Container>
 			<Card>
 				<CardHeader title="yoyo" />
+
+				{/* youtube video iframe */}
 				<CardMedia
 					src="iframe"
 					component={YouTube}
 					videoId={videoId}
 					onReady={(e: { target: YouTubePlayer }) => setPlayer(e.target)}
-					onStateChange={(e: { target: YouTubePlayer; data: number }) =>
-						setPlayerStatus(e.data)
-					}
+					onStateChange={(e: { target: YouTubePlayer; data: number }) => {
+						setPlayerStatus(e.data);
+						if (e.data === PlayerStates.PLAYING) {
+						}
+					}}
 					onPlay={(e: { target: YouTubePlayer }) =>
 						setVideoLength(e.target.getDuration())
 					}
 					sx={{ m: "auto" }}
 				/>
+
 				<CardContent sx={{ m: "auto" }}>
 					<TextField
 						type="text"
@@ -74,6 +79,8 @@ function App() {
 						value={videoId}
 						onChange={(e) => onChangeVideo(e.target.value)}
 					/>
+
+					{/* scoring buttons */}
 					<Stack direction="row" spacing={1}>
 						<Button
 							onClick={() => setScores(1)}
@@ -94,30 +101,16 @@ function App() {
 							RESET
 						</Button>
 					</Stack>
-					<BarChart
-						width={500}
-						height={250}
-						data={Object.keys(scores).map((time) => {
-							return { time: parseFloat(time), score: scores[time] };
-						})}
-					>
-						<XAxis
-							dataKey="time"
-							scale="time"
-							type="number"
-							domain={[0, videoLength]}
-						/>
-						<YAxis dataKey="score" />
-						<Tooltip />
-						<Bar type="monotone" dataKey="score" stroke="#82ca9d" />
-					</BarChart>
+
+					{/* graphs */}
+					<LookAtThisGraph scores={scores} videoLength={videoLength} />
+
+					{/* score debugging */}
 					<p>{JSON.stringify(scores)}</p>
 					<p>
-						{JSON.stringify(
-							Object.keys(scores).map((time) => {
-								return { time: parseFloat(time), score: scores[time] };
-							})
-						)}
+						{Object.keys(scores).map((time) => (
+							<p>{[parseFloat(time), "\t", scores[time]]}</p>
+						))}
 					</p>
 					<p>{videoLength}</p>
 				</CardContent>
